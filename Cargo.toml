@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 zbus = "6.5.0"
+rusqlite = "0.43.0"

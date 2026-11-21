@@ -1,7 +1,8 @@
+mod sql;
+
 use zbus::{Connection, interface};
 
 struct MyInterface {
-
 }
 
 #[interface(name = "org.gnome.Shell.SearchProvider2")]
@@ -15,12 +16,13 @@ impl MyInterface {
     fn get_result_metas(&mut self, argument: Vec<String>) {
 
     }
-    fn activate_result(&mut self, id: &str, terms: Vec<String>, timestamp: i32) {
+    fn activate_result(&mut self, id: &str, terms: Vec<String>, timestamp: i64) {
 
     }
-    fn launch_search(&mut self, argument: Vec<String>, timestamp: i32) {
+    fn launch_search(&mut self, argument: Vec<String>, timestamp: i64) {
 
     }
 }
 
-fn main() {}
+fn main() {
+}
