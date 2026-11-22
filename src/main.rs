@@ -24,33 +24,34 @@ impl MyInterface {
 #[interface(name = "org.gnome.Shell.SearchProvider2")]
 impl MyInterface {
     async fn get_initial_result_set(&mut self, argument: Vec<String>) -> Vec<String> {
-        println!("Calling get_initial_result_with: {argument:?}");
         let sql = self.sql.lock().await;
         sql.get_id(argument).unwrap_or_default()
     }
+
     async fn get_subsearch_result_set(&mut self, previous_results: Vec<String>, arguments: Vec<String>) -> Vec<String> {
-        println!("Calling get_subsearch_result_set: {arguments:?}");
         let sql = self.sql.lock().await;
-        let result = sql.get_results(arguments).unwrap_or_default();
-        println!("Recived: {result:?}",);
-        result
+        sql.get_results(arguments).unwrap_or_default()
     }
 
     async fn get_result_metas(&mut self, argument: Vec<String>) -> Vec<HashMap<String, Value<'static>>> {
-        println!("Calling get_result_metas: {argument:?}");
         let sql = self.sql.lock().await;
         let result = sql.get_metas(argument).unwrap_or_default();
-        println!("Recived: {result:?}",);
+
         result.into_iter().map(|dict| {
             dict.into_iter().map(|(key, val)| {
                 (key, Value::from(val))
             }).collect()
         }).collect()
     }
-    async fn activate_result(&mut self, id: &str, argument: Vec<String>, timestamp: i64) {
-        println!("Calling activate_result: {argument:?}");
+
+    async fn activate_result(&mut self, id: &str, _terms: Vec<String>, _timestamp: u32) {
+        std::process::Command::new("xdg-open")
+            .arg(format!("joplin://x-callback-url/openNote?id={}", id))
+            .spawn()
+            .ok();
     }
-    async fn launch_search(&mut self, argument: Vec<String>, timestamp: i64) {
+
+    async fn launch_search(&mut self, argument: Vec<String>, timestamp: u32) {
         println!("Calling launch_search: {argument:?}");
     }
 }
