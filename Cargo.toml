@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-zbus = "6.5.0"
-rusqlite = "0.43.0"
+zbus = { version = "6.5.0", features = ["tokio"] }
+rusqlite = { version = "0.43.0", features = ["bundled"] }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
