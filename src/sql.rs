@@ -60,15 +60,22 @@ impl Sql {
     pub fn get_metas(&self, ids: Vec<String>) -> Result<Vec<HashMap<String, String>>> {
         let mut result = Vec::new();
         let icon_str = "net.cozic.joplin_desktop".to_string();
+
         for id in ids {
             let mut statement = self.conn.prepare(
-                "SELECT title FROM notes WHERE id = ?",
+                "SELECT title, SUBSTRING(body, 1, 100) FROM notes WHERE id = ?",
             )?;
-            let rows = statement.query_map([&id], |row| row.get::<_, String>(0))?;
+
+            let rows = statement.query_map([&id], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })?;
+
             for row in rows {
+                let (title, body_snippet) = row?;
                 let mut dict = HashMap::new();
                 dict.insert("id".to_string(), id.trim().to_string());
-                dict.insert("name".to_string(), row?);
+                dict.insert("name".to_string(), title);
+                dict.insert("description".to_string(), body_snippet);
                 dict.insert("icon".to_string(), icon_str.clone());
                 result.push(dict);
             }
