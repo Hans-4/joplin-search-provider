@@ -30,6 +30,33 @@ impl Sql {
         }
         Ok(result)
     }
+    pub fn get_results(&self, arguments: Vec<String>) -> Result<Vec<String>> {
+        let mut result = Vec::new();
+
+        if arguments.is_empty() {
+            return Ok(result);
+        }
+
+        // Build single query with AND logic
+        let conditions: Vec<String> = arguments
+            .iter()
+            .map(|arg| format!("(title LIKE '%{}%' OR body LIKE '%{}%')", arg, arg))
+            .collect();
+
+        let query = format!(
+            "SELECT DISTINCT id FROM notes WHERE {}",
+            conditions.join(" AND ")
+        );
+
+        let mut statement = self.conn.prepare(&query)?;
+        let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+
+        for row in rows {
+            result.push(row?);
+        }
+
+        Ok(result)
+    }
     pub fn get_metas(&self, ids: Vec<String>) -> Result<Vec<HashMap<String, String>>> {
         let mut result = Vec::new();
         let icon_str = "net.cozic.joplin_desktop".to_string();
@@ -41,7 +68,7 @@ impl Sql {
             for row in rows {
                 let mut dict = HashMap::new();
                 dict.insert("id".to_string(), id.trim().to_string());
-                dict.insert("title".to_string(), row?);
+                dict.insert("name".to_string(), row?);
                 dict.insert("icon".to_string(), icon_str.clone());
                 result.push(dict);
             }
