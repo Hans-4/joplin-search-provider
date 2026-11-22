@@ -1,5 +1,6 @@
 mod sql;
 
+use std::collections::HashMap;
 use std::sync::{Arc};
 use std::time::Duration;
 use rusqlite::Result;
@@ -22,20 +23,25 @@ impl MyInterface {
 #[interface(name = "org.gnome.Shell.SearchProvider2")]
 impl MyInterface {
     async fn get_initial_result_set(&mut self, argument: Vec<String>) -> Vec<String> {
+        println!("Calling get_initial_result_with: {argument:?}");
         let sql = self.sql.lock().await;
         sql.get_id(argument).unwrap_or_default()
     }
     async fn get_subsearch_result_set(&mut self, argument: Vec<String>) {
-
+        println!("Calling get_subsearch_result_set: {argument:?}");
     }
-    async fn get_result_metas(&mut self, argument: Vec<String>) {
-
+    async fn get_result_metas(&mut self, argument: Vec<String>) -> Vec<HashMap<String, String>> {
+        println!("Calling get_result_metas: {argument:?}");
+        let sql = self.sql.lock().await;
+        let result = sql.get_metas(argument).unwrap_or_default();
+        println!("Recived: {result:?}",);
+        result
     }
-    async fn activate_result(&mut self, id: &str, terms: Vec<String>, timestamp: i64) {
-
+    async fn activate_result(&mut self, id: &str, argument: Vec<String>, timestamp: i64) {
+        println!("Calling activate_result: {argument:?}");
     }
     async fn launch_search(&mut self, argument: Vec<String>, timestamp: i64) {
-
+        println!("Calling launch_search: {argument:?}");
     }
 }
 

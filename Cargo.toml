@@ -7,4 +7,5 @@ edition = "2024"
 zbus = { version = "6.5.0", features = ["tokio"] }
 rusqlite = { version = "0.43.0", features = ["bundled"] }
 tokio = { version = "1", features = ["full"] }
-anyhow = "1"
+gio = "0.22.11"
+glib = "0.22.11"
