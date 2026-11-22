@@ -8,7 +8,6 @@ use zbus::{Connection, interface};
 use sql::Sql;
 use tokio::sync::Mutex;
 use zbus::Variant;
-use urlencoding::encode;
 
 struct MyInterface {
     sql: Arc<Mutex<Sql>>,
@@ -52,7 +51,7 @@ impl MyInterface {
             .ok();
     }
 
-    async fn launch_search(&mut self, terms: Vec<String>, _timestamp: u32) {
+    async fn launch_search(&mut self, _terms: Vec<String>, _timestamp: u32) {
         std::process::Command::new("xdg-open")
             .arg("joplin://")
             .spawn()
