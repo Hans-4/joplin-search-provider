@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use rusqlite::{Connection as SqliteConnection, Result};
 use gio::prelude::*;
-use zbus::Str;
 
 pub struct Sql {
     conn: SqliteConnection,
@@ -13,23 +12,7 @@ impl Sql {
         let conn = SqliteConnection::open(&_db_path)?;
         Ok(Sql { conn, _db_path })
     }
-    pub fn get_id(&self, arguments: Vec<String>) -> Result<Vec<String>> {
-        let mut result = Vec::new();
-        for argument in arguments {
-            let mut statement = self.conn.prepare(
-                "SELECT id FROM notes WHERE title LIKE ? OR body LIKE ?",
-            )?;
-            let search_pattern = format!("%{}%", argument);
-            let rows = statement.query_map(
-                [search_pattern.clone(), search_pattern],
-                |row| row.get::<_, String>(0)
-            )?;
-            for row in rows {
-                result.push(row?);
-            }
-        }
-        Ok(result)
-    }
+
     pub fn get_results(&self, arguments: Vec<String>) -> Result<Vec<String>> {
         let mut result = Vec::new();
 
@@ -37,7 +20,6 @@ impl Sql {
             return Ok(result);
         }
 
-        // Build single query with AND logic
         let conditions: Vec<String> = arguments
             .iter()
             .map(|arg| format!("(title LIKE '%{}%' OR body LIKE '%{}%')", arg, arg))
@@ -57,6 +39,7 @@ impl Sql {
 
         Ok(result)
     }
+
     pub fn get_metas(&self, ids: Vec<String>) -> Result<Vec<HashMap<String, String>>> {
         let mut result = Vec::new();
         let icon_str = "net.cozic.joplin_desktop".to_string();
@@ -77,6 +60,7 @@ impl Sql {
                 dict.insert("name".to_string(), title);
                 dict.insert("description".to_string(), body_snippet);
                 dict.insert("icon".to_string(), icon_str.clone());
+
                 result.push(dict);
             }
         }

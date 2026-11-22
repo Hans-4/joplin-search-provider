@@ -25,7 +25,7 @@ impl MyInterface {
 impl MyInterface {
     async fn get_initial_result_set(&mut self, argument: Vec<String>) -> Vec<String> {
         let sql = self.sql.lock().await;
-        sql.get_id(argument).unwrap_or_default()
+        sql.get_results(argument).unwrap_or_default()
     }
 
     async fn get_subsearch_result_set(&mut self, _previous_results: Vec<String>, arguments: Vec<String>) -> Vec<String> {
