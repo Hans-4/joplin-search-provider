@@ -7,7 +7,8 @@ use rusqlite::Result;
 use zbus::{Connection, interface};
 use sql::Sql;
 use tokio::sync::Mutex;
-use zbus::zvariant::Value;
+use zbus::Variant;
+use urlencoding::encode;
 
 struct MyInterface {
     sql: Arc<Mutex<Sql>>,
@@ -28,18 +29,18 @@ impl MyInterface {
         sql.get_id(argument).unwrap_or_default()
     }
 
-    async fn get_subsearch_result_set(&mut self, previous_results: Vec<String>, arguments: Vec<String>) -> Vec<String> {
+    async fn get_subsearch_result_set(&mut self, _previous_results: Vec<String>, arguments: Vec<String>) -> Vec<String> {
         let sql = self.sql.lock().await;
         sql.get_results(arguments).unwrap_or_default()
     }
 
-    async fn get_result_metas(&mut self, argument: Vec<String>) -> Vec<HashMap<String, Value<'static>>> {
+    async fn get_result_metas(&mut self, argument: Vec<String>) -> Vec<HashMap<String, Variant<'_>>> {
         let sql = self.sql.lock().await;
         let result = sql.get_metas(argument).unwrap_or_default();
 
         result.into_iter().map(|dict| {
             dict.into_iter().map(|(key, val)| {
-                (key, Value::from(val))
+                (key, Variant::from(val))
             }).collect()
         }).collect()
     }
@@ -51,8 +52,11 @@ impl MyInterface {
             .ok();
     }
 
-    async fn launch_search(&mut self, argument: Vec<String>, timestamp: u32) {
-        println!("Calling launch_search: {argument:?}");
+    async fn launch_search(&mut self, terms: Vec<String>, _timestamp: u32) {
+        std::process::Command::new("xdg-open")
+            .arg("joplin://")
+            .spawn()
+            .ok();
     }
 }
 
