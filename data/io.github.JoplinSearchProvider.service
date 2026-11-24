@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=io.github.hans4.JoplinSearchProvider
+Exec=/usr/bin/joplin-search-provider
