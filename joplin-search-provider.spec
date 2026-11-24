@@ -29,8 +29,8 @@ install -Dm0755 target/release/joplin-search-provider \
     %{buildroot}%{_bindir}/joplin-search-provider
 install -Dm0644 data/io.github.hans4.JoplinSearchProvider.search-provider.ini \
     %{buildroot}%{_datadir}/gnome-shell/search-providers/io.github.hans4.JoplinSearchProvider.search-provider.ini
-install -Dm0644 data/io.github.JoplinSearchProvider.service \
-	%{buildroot}%{_datadir}/dbus-1/services/io.github.JoplinSearchProvider.service
+install -Dm0644 data/io.github.hans4.JoplinSearchProvider.service \
+    %{buildroot}%{_datadir}/dbus-1/services/io.github.hans4.JoplinSearchProvider.service
 
 %files
 %license LICENSE
