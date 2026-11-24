@@ -39,5 +39,5 @@ install -Dm0644 data/io.github.hans4.JoplinSearchProvider.service \
 %{_datadir}/gnome-shell/search-providers/io.github.hans4.JoplinSearchProvider.search-provider.ini
 
 %changelog
-* Tue Nov 23 2026 Hans-4 <hannes.dev@gmx.de> - 1.0.0-1
+* Tue Nov 24 2026 Hans-4 <hannes.dev@gmx.de> - 1.0.0-1
 - Initial package
