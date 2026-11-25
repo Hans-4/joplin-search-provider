@@ -48,29 +48,76 @@ impl Sql {
     }
 
     pub fn get_metas(&self, ids: Vec<String>) -> Result<Vec<HashMap<String, String>>> {
-        let mut result = Vec::new();
-        let icon_str = "net.cozic.joplin_desktop".to_string();
-
-        for id in ids {
-            let mut statement = self.conn.prepare(
-                "SELECT title, SUBSTRING(body, 1, 100) FROM notes WHERE id = ?",
-            )?;
-
-            let rows = statement.query_map([&id], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            })?;
-
-            for row in rows {
-                let (title, body_snippet) = row?;
-                let mut dict = HashMap::new();
-                dict.insert("id".to_string(), id.trim().to_string());
-                dict.insert("name".to_string(), title);
-                dict.insert("description".to_string(), body_snippet);
-                dict.insert("icon".to_string(), icon_str.clone());
-
-                result.push(dict);
-            }
+        if ids.is_empty() {
+            return Ok(Vec::new());
         }
+
+        let icon_str = "net.cozic.joplin_desktop".to_string();
+        let placeholders = vec!["?"; ids.len()].join(", ");
+        let mut result = Vec::new();
+
+        let tag_query = format!(
+            "SELECT tags.id, tags.title, GROUP_CONCAT(notes.title, ', ')
+             FROM tags
+             LEFT JOIN note_tags ON tags.id = note_tags.tag_id
+             LEFT JOIN notes ON note_tags.note_id = notes.id
+             WHERE tags.id IN ({})
+             GROUP BY tags.id",
+            placeholders
+        );
+
+        let note_query = format!(
+            "SELECT id, title, SUBSTRING(body, 1, 100)
+            FROM notes
+            WHERE id IN ({})",
+            placeholders
+        );
+
+        let folder_query = format!(
+            "SELECT folders.id, folders.title, GROUP_CONCAT(notes.title, ', ')
+             FROM folders
+             LEFT JOIN notes ON notes.parent_id = folders.id
+             WHERE folders.id IN ({})
+             GROUP BY folders.id",
+            placeholders
+        );
+
+        self.append_metadata_rows(&tag_query, &ids, &mut result, &icon_str)?;
+        self.append_metadata_rows(&folder_query, &ids, &mut result, &icon_str)?;
+        self.append_metadata_rows(&note_query, &ids, &mut result, &icon_str)?;
+
         Ok(result)
+    }
+
+    fn append_metadata_rows(
+        &self,
+        query: &str,
+        ids: &[String],
+        result: &mut Vec<HashMap<String, String>>,
+        icon: &str,
+    ) -> Result<()> {
+        let mut stmt = self.conn.prepare(query)?;
+        let rows = stmt.query_map(
+            rusqlite::params_from_iter(ids.iter()),
+            |row: &rusqlite::Row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            },
+        )?;
+
+        for row in rows {
+            let (id, name, description) = row?;
+            let mut metadata = HashMap::new();
+            metadata.insert("id".to_string(), id);
+            metadata.insert("name".to_string(), name);
+            metadata.insert("description".to_string(), description.unwrap_or_default());
+            metadata.insert("icon".to_string(), icon.to_string());
+            result.push(metadata);
+        }
+
+        Ok(())
     }
 }
