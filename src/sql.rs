@@ -31,9 +31,18 @@ impl Sql {
         }
 
         let queries = vec![
-            format!("SELECT DISTINCT id FROM tags WHERE {}", tag_conditions.join(" AND ")),
-            format!("SELECT DISTINCT id FROM folders WHERE {}", folder_conditions.join(" AND ")),
-            format!("SELECT DISTINCT id FROM notes WHERE {}", note_conditions.join(" AND ")),
+            format!(
+                "SELECT DISTINCT id FROM tags WHERE {}",
+                tag_conditions.join(" AND ")
+            ),
+            format!(
+                "SELECT DISTINCT id FROM folders WHERE {}",
+                folder_conditions.join(" AND ")
+            ),
+            format!(
+                "SELECT DISTINCT id FROM notes WHERE {}",
+                note_conditions.join(" AND ")
+            ),
         ];
 
         let mut result = Vec::new();
