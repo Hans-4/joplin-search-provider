@@ -17,29 +17,33 @@ impl Sql {
     }
 
     pub fn get_results(&self, arguments: Vec<String>) -> Result<Vec<String>> {
-        let mut result = Vec::new();
-
         if arguments.is_empty() {
-            return Ok(result);
+            return Ok(Vec::new());
         }
 
-        let conditions: Vec<String> = arguments
-            .iter()
-            .map(|arg| format!("(title LIKE '%{}%' OR body LIKE '%{}%')", arg, arg))
-            .collect();
+        let mut note_conditions = Vec::new();
+        let mut tag_conditions = Vec::new();
+        let mut folder_conditions = Vec::new();
 
-        let query = format!(
-            "SELECT DISTINCT id FROM notes WHERE {}",
-            conditions.join(" AND ")
-        );
-
-        let mut statement = self.conn.prepare(&query)?;
-        let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
-
-        for row in rows {
-            result.push(row?);
+        for arg in &arguments {
+            note_conditions.push(format!("(title LIKE '%{}%' OR body LIKE '%{}%')", arg, arg));
+            tag_conditions.push(format!("(title LIKE '%{}%')", arg));
+            folder_conditions.push(format!("(title LIKE '%{}%')", arg));
         }
 
+        let queries = vec![
+            format!("SELECT DISTINCT id FROM tags WHERE {}", tag_conditions.join(" AND ")),
+            format!("SELECT DISTINCT id FROM folders WHERE {}", folder_conditions.join(" AND ")),
+            format!("SELECT DISTINCT id FROM notes WHERE {}", note_conditions.join(" AND ")),
+        ];
+
+        let mut result = Vec::new();
+        for query in queries {
+            let mut stmt = self.conn.prepare(&query)?;
+            for row in stmt.query_map([], |row| row.get::<_, String>(0))? {
+                result.push(row?);
+            }
+        }
         Ok(result)
     }
 
