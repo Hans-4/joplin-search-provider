@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use rusqlite::{Connection as SqliteConnection, Result};
+use std::collections::HashMap;
 
 pub struct Sql {
     conn: SqliteConnection,
@@ -7,11 +7,10 @@ pub struct Sql {
 }
 impl Sql {
     pub fn conn() -> Result<Self> {
-        let _db_path = std::env::var("JOPLIN_DB_PATH")
-            .unwrap_or_else(|_| {
-                let home = std::env::var("HOME").expect("HOME not set");
-                format!("{}/.config/joplin-desktop/database.sqlite", home)
-            });
+        let _db_path = std::env::var("JOPLIN_DB_PATH").unwrap_or_else(|_| {
+            let home = std::env::var("HOME").expect("HOME not set");
+            format!("{}/.config/joplin-desktop/database.sqlite", home)
+        });
         let conn = SqliteConnection::open(&_db_path)?;
         Ok(Sql { conn, _db_path })
     }
