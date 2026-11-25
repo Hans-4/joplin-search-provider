@@ -16,56 +16,116 @@ impl Sql {
     }
 
     pub fn get_results(&self, arguments: Vec<String>) -> Result<Vec<String>> {
-        let mut result = Vec::new();
-
         if arguments.is_empty() {
-            return Ok(result);
+            return Ok(Vec::new());
         }
 
-        let conditions: Vec<String> = arguments
-            .iter()
-            .map(|arg| format!("(title LIKE '%{}%' OR body LIKE '%{}%')", arg, arg))
-            .collect();
+        let mut note_conditions = Vec::new();
+        let mut tag_conditions = Vec::new();
+        let mut folder_conditions = Vec::new();
 
-        let query = format!(
-            "SELECT DISTINCT id FROM notes WHERE {}",
-            conditions.join(" AND ")
-        );
-
-        let mut statement = self.conn.prepare(&query)?;
-        let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
-
-        for row in rows {
-            result.push(row?);
+        for arg in &arguments {
+            note_conditions.push(format!("(title LIKE '%{}%' OR body LIKE '%{}%')", arg, arg));
+            tag_conditions.push(format!("(title LIKE '%{}%')", arg));
+            folder_conditions.push(format!("(title LIKE '%{}%')", arg));
         }
 
+        let queries = vec![
+            format!(
+                "SELECT DISTINCT id FROM tags WHERE {}",
+                tag_conditions.join(" AND ")
+            ),
+            format!(
+                "SELECT DISTINCT id FROM folders WHERE {}",
+                folder_conditions.join(" AND ")
+            ),
+            format!(
+                "SELECT DISTINCT id FROM notes WHERE {}",
+                note_conditions.join(" AND ")
+            ),
+        ];
+
+        let mut result = Vec::new();
+        for query in queries {
+            let mut stmt = self.conn.prepare(&query)?;
+            for row in stmt.query_map([], |row| row.get::<_, String>(0))? {
+                result.push(row?);
+            }
+        }
         Ok(result)
     }
 
     pub fn get_metas(&self, ids: Vec<String>) -> Result<Vec<HashMap<String, String>>> {
-        let mut result = Vec::new();
-        let icon_str = "net.cozic.joplin_desktop".to_string();
-
-        for id in ids {
-            let mut statement = self
-                .conn
-                .prepare("SELECT title, SUBSTRING(body, 1, 100) FROM notes WHERE id = ?")?;
-
-            let rows = statement.query_map([&id], |row| {
-                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
-            })?;
-
-            for row in rows {
-                let (title, body_snippet) = row?;
-                let mut dict = HashMap::new();
-                dict.insert("id".to_string(), id.trim().to_string());
-                dict.insert("name".to_string(), title);
-                dict.insert("description".to_string(), body_snippet);
-                dict.insert("icon".to_string(), icon_str.clone());
-
-                result.push(dict);
-            }
+        if ids.is_empty() {
+            return Ok(Vec::new());
         }
+
+        let icon_str = "net.cozic.joplin_desktop".to_string();
+        let placeholders = vec!["?"; ids.len()].join(", ");
+        let mut result = Vec::new();
+
+        let tag_query = format!(
+            "SELECT tags.id, tags.title, GROUP_CONCAT(notes.title, ', ')
+             FROM tags
+             LEFT JOIN note_tags ON tags.id = note_tags.tag_id
+             LEFT JOIN notes ON note_tags.note_id = notes.id
+             WHERE tags.id IN ({})
+             GROUP BY tags.id",
+            placeholders
+        );
+
+        let note_query = format!(
+            "SELECT id, title, SUBSTRING(body, 1, 100)
+            FROM notes
+            WHERE id IN ({})",
+            placeholders
+        );
+
+        let folder_query = format!(
+            "SELECT folders.id, folders.title, GROUP_CONCAT(notes.title, ', ')
+             FROM folders
+             LEFT JOIN notes ON notes.parent_id = folders.id
+             WHERE folders.id IN ({})
+             GROUP BY folders.id",
+            placeholders
+        );
+
+        self.append_metadata_rows(&tag_query, &ids, &mut result, &icon_str)?;
+        self.append_metadata_rows(&folder_query, &ids, &mut result, &icon_str)?;
+        self.append_metadata_rows(&note_query, &ids, &mut result, &icon_str)?;
+
         Ok(result)
+    }
+
+    fn append_metadata_rows(
+        &self,
+        query: &str,
+        ids: &[String],
+        result: &mut Vec<HashMap<String, String>>,
+        icon: &str,
+    ) -> Result<()> {
+        let mut stmt = self.conn.prepare(query)?;
+        let rows = stmt.query_map(
+            rusqlite::params_from_iter(ids.iter()),
+            |row: &rusqlite::Row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                ))
+            },
+        )?;
+
+        for row in rows {
+            let (id, name, description) = row?;
+            let mut metadata = HashMap::new();
+            metadata.insert("id".to_string(), id);
+            metadata.insert("name".to_string(), name);
+            metadata.insert("description".to_string(), description.unwrap_or_default());
+            metadata.insert("icon".to_string(), icon.to_string());
+            result.push(metadata);
+        }
+
+        Ok(())
     }
 }
