@@ -55,10 +55,23 @@ impl MyInterface {
     }
 
     async fn activate_result(&mut self, id: &str, _terms: Vec<String>, _timestamp: u32) {
-        std::process::Command::new("xdg-open")
-            .arg(format!("joplin://x-callback-url/openNote?id={}", id))
-            .spawn()
-            .ok();
+        let sql = self.sql.lock().await;
+
+        let table = sql.get_type(id).ok().flatten();
+
+        let tp = match table.as_deref() {
+            Some("notes") => "openNote",
+            Some("tags") => "openTag",
+            Some("folders") => "openFolder",
+            _ => "",
+        };
+
+        if !tp.is_empty() {
+            std::process::Command::new("xdg-open")
+                .arg(format!("joplin://x-callback-url/{}?id={}", tp, id))
+                .spawn()
+                .ok();
+        }
     }
 
     async fn launch_search(&mut self, _terms: Vec<String>, _timestamp: u32) {

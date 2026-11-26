@@ -128,4 +128,19 @@ impl Sql {
 
         Ok(())
     }
+
+    pub fn get_type(&self, id: &str) -> Result<Option<String>> {
+        let tables = ["notes", "tags", "folders"];
+        for table in tables.iter() {
+            let query = format!("SELECT 1 FROM {} WHERE id = ?", table);
+            let mut stmt = self.conn.prepare(&query)?;
+
+            if stmt.exists([id])? {
+                println!("Found ID in table: {}", table);
+                return Ok(Some(table.to_string()));
+            }
+        }
+
+        Ok(None)
+    }
 }
