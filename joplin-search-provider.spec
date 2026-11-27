@@ -1,5 +1,5 @@
 Name:           joplin-search-provider
-Version:        1.0.0
+Version:        1.1.0
 Release:        1%{?dist}
 Summary:        GNOME Shell Search Provider for Joplin notes
 
@@ -39,5 +39,8 @@ install -Dm0644 data/io.github.hans4.JoplinSearchProvider.service \
 %{_datadir}/gnome-shell/search-providers/io.github.hans4.JoplinSearchProvider.search-provider.ini
 
 %changelog
+* Fr Nov 27 2026 Hans-4 <hannes.dev@gmx.de> - 1.1.0-1
+- Add folders and tags to search
+
 * Tue Nov 24 2026 Hans-4 <hannes.dev@gmx.de> - 1.0.0-1
 - Initial package
