@@ -60,7 +60,10 @@ impl Sql {
             return Ok(Vec::new());
         }
 
-        let icon_str = "net.cozic.joplin_desktop".to_string();
+        let note_icon = "x-office-document".to_string();
+        let folder_icon = "folder".to_string();
+        let tag_icon = "user-bookmarks".to_string();
+
         let placeholders = vec!["?"; ids.len()].join(", ");
         let mut result = Vec::new();
 
@@ -90,9 +93,9 @@ impl Sql {
             placeholders
         );
 
-        self.append_metadata_rows(&tag_query, &ids, &mut result, &icon_str)?;
-        self.append_metadata_rows(&folder_query, &ids, &mut result, &icon_str)?;
-        self.append_metadata_rows(&note_query, &ids, &mut result, &icon_str)?;
+        self.append_metadata_rows(&tag_query, &ids, &mut result, &tag_icon)?;
+        self.append_metadata_rows(&folder_query, &ids, &mut result, &folder_icon)?;
+        self.append_metadata_rows(&note_query, &ids, &mut result, &note_icon)?;
 
         Ok(result)
     }
